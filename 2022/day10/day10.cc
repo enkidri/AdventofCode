@@ -1,116 +1,138 @@
-#include <iostream>
-#include <map>
-#include <vector>
-#include <algorithm>
-#include <stack>
-#include <fstream>
-#include <string>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
+#include<algorithm>
+#include<iterator>
+#include<numeric>
+#include<regex>
+#include<stack>
+#include<queue>
+#include<set>
+#include<map>
+#include<sstream>
+#include<functional>
+#include<algorithm>
+#include<cstdlib>
 using namespace std;
 
-unsigned long long int scoreCalc(string const& s)
+vector<string> stringSplit(string& s)
 {
-    unsigned long long int score{};
-    map<char, unsigned long long int> brackets_score{{')', 1}, {']', 2}, {'}', 3}, {'>', 4}};
-    for (char const& c:s)
+    stringstream ss(s);
+    istream_iterator<string> begin(ss);
+    istream_iterator<string> end;
+    vector<string> vstrings(begin, end);
+    
+    return vstrings;
+}
+
+int calcSignalStrength(int cycle, int X)
+{
+    int signal_strength{};
+    if ((220 >= cycle) && (cycle >= 20) && ((cycle - 20) % 40 == 0))
     {
-        score *= 5;
-        score += brackets_score[c];
+        signal_strength = X * cycle;
     }
-    return score;
+    return signal_strength;
+}
+
+void partOne()
+{   
+    string input;
+    ifstream file("day10.txt");
+
+    int cycle{};
+    int X{1};
+    int signal_strength{};
+    while (getline(file, input))
+    {
+        vector<string> inputv = stringSplit(input);
+        if (inputv[0] == "noop")
+        {
+            cycle++;
+            signal_strength += calcSignalStrength(cycle, X);
+        }
+        else if (inputv[0] == "addx")
+        {
+            int to_add = stoi(inputv[1]);
+            cycle++;
+            signal_strength += calcSignalStrength(cycle, X);
+
+            cycle++;
+            signal_strength += calcSignalStrength(cycle, X);
+
+            X += to_add;
+        }
+
+    }
+
+    cout << "Part 1: Sum of the signal strengths are " << signal_strength << endl;
+
+}
+//==================================================================
+//The edge is messed up but whatever, mostly works anyways
+
+void writeToCRT(vector<char>& screen, int cycle, int X)
+{
+    int cycle_to_row = (cycle % 40) - 1;
+    int X_to_row = X - 1;
+    if ((X_to_row <= cycle_to_row) && (cycle_to_row < X_to_row+3))
+    {
+        screen[cycle - 1] = '#';
+    }
+}
+
+void CRTPrinter(vector<char> screen)
+{
+    for (int row=0; row < 6; row++)
+    {
+        for (int ele=0; ele < 40; ele++)
+        {
+            cout << screen[row*40 + ele];
+        }
+        cout << endl;
+    }
 }
 
 void partTwo()
 {
-    ifstream f{"day10.txt"};
-    string line;
-    map<char, char> brackets{{')', '('}, {']', '['}, {'}', '{'}, {'>', '<'}};
-    vector<unsigned long long int> scores;
+    string input;
+    ifstream file("day10.txt");
 
-    stack<char> s;
-    bool skipLine = false;
-    while (getline(f,line))
+    vector<char> CRT_screen(240, '.');
+
+    int cycle{};
+    int X{1};
+    while (getline(file, input))
     {
-        s = {};
-        for (char const& c:line)
+        vector<string> inputv = stringSplit(input);
+        if (inputv[0] == "noop")
         {
-            if ((c == '(') || (c == '[') || (c == '{') || (c == '<'))
-            {
-                s.push(c);
-            }
-            else
-            {
-                if (brackets[c] != s.top())
-                {
-                    skipLine = true;
-                    break;
-                }
-                else
-                {
-                    s.pop();
-                }
-            }
+            cycle++;
+            writeToCRT(CRT_screen, cycle, X);
         }
-        if (skipLine)
+        else if (inputv[0] == "addx")
         {
-            skipLine = false;
-            continue;
-        }
-        string str = "";
-        int s_size = s.size();
-        for (int i=0; i < s_size; ++i)
-        {
-            for (auto const&i:brackets)
-            {
-                if (i.second == s.top())
-                {
-                    str += i.first;
-                    break;
-                }
-            }
-            s.pop();
-        }
-        scores.push_back(scoreCalc(str));
-    }
-    sort(scores.begin(), scores.end(), greater<unsigned long long int>());
-    cout << "The middle score is " << scores[((scores.size()-1)/2)];
-}
+            int to_add = stoi(inputv[1]);
+            cycle++;
+            writeToCRT(CRT_screen, cycle, X);
 
-void partOne()
-{
-    ifstream f{"day10.txt"};
-    string line;
-    map<char, char> brackets{{')', '('}, {']', '['}, {'}', '{'}, {'>', '<'}};
-    map<char, int> brackets_score{{')', 3}, {']', 57}, {'}', 1197}, {'>', 25137}};
+            cycle++;
+            writeToCRT(CRT_screen, cycle, X);
 
-    stack<char> s;
-    int syntaxScore{};
-    while (getline(f,line))
-    {
-        for (char const& c:line)
-        {
-            if ((c == '(') || (c == '[') || (c == '{') || (c == '<'))
-            {
-                s.push(c);
-            }
-            else
-            {
-                if (brackets[c] != s.top())
-                {
-                    syntaxScore += brackets_score[c];
-                    break;
-                }
-                else
-                {
-                    s.pop();
-                }
-            }
+            X += to_add;
+
         }
     }
-    cout << "The current score is " << syntaxScore;
+
+    cout << "Part 2:" << endl;
+
+    CRTPrinter(CRT_screen);
 }
 
 int main()
 {
+    partOne();
     partTwo();
     return 0;
 }

@@ -1,199 +1,247 @@
 #include <iostream>
-#include <string>
-#include <map>
-#include <algorithm>
-#include <vector>
 #include <fstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+#include <numeric>
 #include <regex>
+#include <stack>
+#include <queue>
+#include <set>
+#include <map>
+#include <sstream>
+#include <functional>
+#include <algorithm>
+#include <cstdlib>
+#include <cmath>
+#include <iomanip>
 using namespace std;
 
-//Not foolproof but it works. Does not work if "start" is on the right side of "-" sign
+typedef pair<int, int> Coordinates;
+typedef vector<vector<int>> Grid;
 
-class CaveSystem
+pair<pair<Coordinates,Coordinates>, Grid> parser(ifstream& file)
 {
-    public:
-        CaveSystem()
-        {}
-
-        void getInput(string const& filename)
+    string input{};
+    Grid v;
+    Coordinates start;
+    Coordinates end;
+    
+    int y{};
+    while (getline(file, input))
+    {
+        int x = 0;
+        vector<int> v_row;
+        for (char& c:input)
         {
-            ifstream f{filename};
-            string line;
-
-            const regex r("(\\w+)-(\\w+)");
-            smatch sm;
-
-            while (getline(f,line))
+            if (c == 'S')
             {
-                if (regex_search(line, sm, r))
-                {
-                    if (input.find(sm[1]) == input.end())
-                    {
-                        input[sm[1]];
-                    }
-                    if (input.find(sm[2]) == input.end())
-                    {
-                        input[sm[2]];
-                    }
-
-                    input[sm[1]].push_back(sm[2]);
-                    if (sm[1] != "start")               
-                    {
-                        input[sm[2]].push_back(sm[1]);
-                    }
-                }
-                else
-                {
-                    cout << "Error in regex";
-                    break;
-                }
+                start = {x, y};
+                v_row.push_back(0);
             }
-        }
-
-        void findRoutes()
-        {
-            vector<string> passedSmallCave;
-            vector<string> route;
-
-            findRoutes_helper("start", passedSmallCave, route);
-            //routes.erase(unique(routes.begin(), routes.end()), routes.end());
-        }
-
-        void findRoutes_helper(string const& cave, vector<string> passedSmallCave, 
-                               vector<string> route)
-        {
-            if (cave == "end")
+            else if (c == 'E')
             {
-                route.push_back(cave);
-                routes.push_back(route);
-                return;
+                end = {x, y};
+                v_row.push_back('z' - 'a');
             }
-            if ((input.find(cave) == input.end()) || 
-                (find(passedSmallCave.begin(), passedSmallCave.end(), cave) 
-                != passedSmallCave.end()))
-                return;
+            else
+            {
+                v_row.push_back(c - 'a');
+            }
             
-            route.push_back(cave);
-            if (!all_of(cave.begin(), cave.end(), [](unsigned char c){ return std::isupper(c);})) //!is_capital letters
-            {
-                passedSmallCave.push_back(cave);
-            }
-            for (int i=0; i < input[cave].size(); ++i)
-            {
-                string c = input[cave][i];
-                vector<string> passedSmallCaveDiv = passedSmallCave;
-                
-                findRoutes_helper(c, passedSmallCaveDiv, route);
-            }
-        }
-
-        void findRoutes2()
-        {
-            map<string,int> passedSmallCave;
-            vector<string> route;
-            bool passSmallTwice = false;
-
-            findRoutes2_helper("start", passedSmallCave, route, passSmallTwice);
-            //routes.erase(unique(routes.begin(), routes.end()), routes.end());
-        }
-
-        void findRoutes2_helper(string const& cave, map<string,int> passedSmallCave, 
-                               vector<string> route, bool passSmallTwice)
-        {
-            if (cave == "end")
-            {
-                route.push_back(cave);
-                routes.push_back(route);
-                return;
-            }
-            if ((input.find(cave) == input.end()) || 
-                (((passedSmallCave[cave] == 1) || (passedSmallCave[cave] == 2)) && (passSmallTwice)))
-                return;
             
-            route.push_back(cave);
-            if (!all_of(cave.begin(), cave.end(), [](unsigned char c){ return std::isupper(c);})) //!is_capital letters
-            {
-                if (passedSmallCave.find(cave) == passedSmallCave.end())
-                {
-                    passedSmallCave[cave];
-                }
-                ++passedSmallCave[cave];
-                if (passedSmallCave[cave] == 2)
-                    passSmallTwice = true;
-            }
-            for (int i=0; i < input[cave].size(); ++i)
-            {
-                string c = input[cave][i];
-                map<string,int> passedSmallCaveDiv = passedSmallCave;
-                bool passSmallTwiceDiv = passSmallTwice;
-                
-                findRoutes2_helper(c, passedSmallCaveDiv, route, passSmallTwiceDiv);
-            }
+            x++;
         }
 
-        void printInput()
+        v.push_back(v_row);
+        y++;
+    }
+    
+    return pair<pair<Coordinates,Coordinates>, Grid>{{start, end}, v};
+}
+
+void gridPrinter(Grid& v)
+{
+    for (auto& row:v)
+    {
+        for (auto& ele:row)
         {
-            for (auto const& v:input)
-            {
-                cout << v.first << ": ";
-                for (auto& ele:v.second)
+            cout << setfill(' ') << setw(2) <<  ele << " ";
+        }
+        cout << endl;
+    }
+}
+
+vector<Coordinates> next(Grid& g, Coordinates& c)
+{
+    vector<Coordinates> allowed_pos;
+    int x = c.first;
+    int y = c.second;
+    int current = g[y][x];
+    int x_size = g[0].size();
+    int y_size = g.size();
+
+    int up{};
+    int down{};
+    int left{};
+    int right{};
+    if ((y-1)>=0)
+    {
+        up = g[y-1][x];
+        if (up <= current + 1)
+        {
+            allowed_pos.push_back(Coordinates(x, y-1));
+        }
+    }
+    if ((y+1) < y_size)
+    {
+        down = g[y+1][x];
+        if (down <= current + 1)
+        {
+            allowed_pos.push_back(Coordinates(x, y+1));
+        }
+    }
+    if ((x-1) >= 0)
+    {
+        left = g[y][x-1];
+        if (left <= current + 1)
+        {
+            allowed_pos.push_back(Coordinates(x-1, y));
+        }
+    }
+    if ((x+1) < x_size)
+    {
+        right = g[y][x+1];
+        if (right <= current + 1)
+        {
+            allowed_pos.push_back(Coordinates(x+1, y));
+        }
+    }
+    
+    return allowed_pos;
+}
+
+
+//0 start
+//-1 goal
+void partOne()
+{   
+    ifstream file("day12.txt");
+
+    pair<pair<Coordinates,Coordinates>, Grid> parsed = parser(file);
+    Coordinates start = parsed.first.first;
+    Coordinates goal = parsed.first.second;
+    Grid grid = parsed.second;
+    int y_size = grid.size();
+    int x_size = grid[0].size();
+    Grid cost_to_come(y_size, vector<int>(x_size, 0));
+
+    auto compare = [](pair<Coordinates,int>& lhs, pair<Coordinates,int>& rhs)
                 {
-                    cout << ele << " ";
-                }
-                cout << endl;
+                    return lhs.second > rhs.second;
+                };
+
+    priority_queue<pair<Coordinates,int>, vector<pair<Coordinates,int>>, decltype(compare)> queue(compare);
+    queue.push(pair<Coordinates,int>{start, 0});
+    while (!queue.empty())
+    {
+        queue.pop();
+        pair<Coordinates,int> current = queue.top();
+        if (current.first == goal)
+        {
+            break;
+        }
+        vector<Coordinates> n = next(grid, current.first);
+        for (auto& coord:n)
+        {
+            int x = current.first.first;
+            int y = current.first.second;
+            int xi = coord.first;
+            int yi = coord.second;
+            if (((cost_to_come[yi][xi] == 0)) || (cost_to_come[yi][xi] > cost_to_come[y][x] + 1))
+            {
+                cost_to_come[yi][xi] = cost_to_come[y][x] + 1;
+                queue.push(pair<Coordinates,int>(Coordinates{xi,yi}, cost_to_come[yi][xi]));
             }
         }
+    }
 
-        void printRoutes()
-        {
-            for (auto const& route:routes)
-            {
-                for(auto const& cave:route)
-                {
-                    cout << cave << " ";
-                }
-                cout << "\n";
-            }
-            cout << endl;
-        }
+    cout << "Part 1: The number of steps to the best spot is " << cost_to_come[goal.second][goal.first] << endl;
 
-        int getRoutesSize()
-        {
-            return routes.size();
-        }
-
-    private:
-        map<string,vector<string>> input;
-        vector<vector<string>> routes;
-};
-
-//To check if string is in uppercase
-//all_of(s.begin(), s.end(), [](unsigned char c){ return std::isupper(c);}); 
-//TODO: Lös rekursivt genom att gå igenom input
+}
 
 void partTwo()
 {
-    CaveSystem c;
-    c.getInput("day12.txt");
-    c.printInput();
-    //c.findRoutes2();
-    //c.printRoutes();
-    cout << "There are " << c.getRoutesSize() << " possible routes." << endl;
-}
+    ifstream file("day12.txt");
 
-void partOne()
-{
-    CaveSystem c;
-    c.getInput("day12.txt");
-    //c.printInput();
-    c.findRoutes();
-    c.printRoutes();
-    cout << "There are " << c.getRoutesSize() << " possible routes." << endl;
+    pair<pair<Coordinates,Coordinates>, Grid> parsed = parser(file);
+    Grid grid = parsed.second;
+    Coordinates goal = parsed.first.second;
+    vector<Coordinates> starts;
+    {
+        int y = 0;
+        for (auto& row:grid)
+        {
+            int x = 0;
+            for (auto& ele:row)
+            {
+                if (ele == 0)
+                {
+                    starts.push_back(Coordinates{x,y});
+                }
+                x++;
+            }
+            y++;
+        }
+    }
+
+    int y_size = grid.size();
+    int x_size = grid[0].size();
+    vector<int> lengths;
+    for (auto& start:starts)
+    {
+        Grid cost_to_come(y_size, vector<int>(x_size, 0));
+        auto compare = [](pair<Coordinates,int>& lhs, pair<Coordinates,int>& rhs)
+                    {
+                        return lhs.second > rhs.second;
+                    };
+        priority_queue<pair<Coordinates,int>, vector<pair<Coordinates,int>>, decltype(compare)> queue(compare);
+        queue.push(pair<Coordinates,int>{start, 0});
+        while (!queue.empty())
+        {
+            pair<Coordinates,int> current = queue.top();
+            if (current.first == goal)
+            {
+                lengths.push_back(cost_to_come[goal.second][goal.first]);
+                break;
+            }
+            queue.pop();
+            vector<Coordinates> n = next(grid, current.first);
+            for (auto& coord:n)
+            {
+                int x = current.first.first;
+                int y = current.first.second;
+                int xi = coord.first;
+                int yi = coord.second;
+                if ((((cost_to_come[yi][xi] == 0)) || (cost_to_come[yi][xi] > cost_to_come[y][x] + 1)))
+                {
+                    cost_to_come[yi][xi] = cost_to_come[y][x] + 1;
+                    queue.push(pair<Coordinates,int>(Coordinates{xi,yi}, cost_to_come[yi][xi]));
+                }
+            }
+        }
+    }
+
+    int ans = *min_element(lengths.begin(), lengths.end());
+
+    cout << "Part 2: The smallest number of steps to the goal from the best viewing spot is " << ans << endl;
 }
 
 int main()
 {
-    //partOne();
+    partOne();
     partTwo();
+
     return 0;
 }

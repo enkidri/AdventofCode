@@ -1,303 +1,232 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <numeric>
-#include <math.h>
-#include <sstream>
-#include <algorithm>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
+#include<algorithm>
+#include<iterator>
+#include<numeric>
+#include<regex>
+#include<stack>
+#include<queue>
+#include<set>
+#include<map>
+#include<sstream>
+#include<functional>
+#include<algorithm>
 using namespace std;
 
-void print(vector<vector<string>> const& vect)
+typedef vector<vector<int>> TreeGrid;
+
+bool upIsShorter(TreeGrid& g, int center, int x, int y)
 {
-    for (auto const& output:vect)
+    for (int i=y-1; i >= 0; i--)
     {
-        for (auto const& ele:output)
+        if (g[i][x] >= center)
         {
-            cout << ele << " ";
+            return false;
         }
-        cout << endl;
     }
+    return true;
 }
 
-void print(vector<string> const& vect)
+bool rightIsShorter(TreeGrid& g, int center, int x, int y)
 {
-    int count = 0;
-    for (auto const& ele:vect)
+    int x_size = g[0].size();
+    for (int i=x+1; i < x_size; i++)
     {
-        cout << ele << "; " << count << endl;
-        ++count;
+        if (g[y][i] >= center)
+        {
+            return false;
+        }
     }
-    cout << endl;
 
+    return true;
 }
 
-bool isInString(string const& key, string const& to_check)
+bool leftIsShorter(TreeGrid& g, int center, int x, int y)
 {
-    bool is_in_string = false;
-    int len = to_check.length();
-    for (auto const& c:key)
+    int x_size = g[0].size();
+    for (int i=x-1; i >= 0; i--)
     {
-        is_in_string = false;
-        int count = 0;
-        for (auto const& l:to_check)
+        if (g[y][i] >= center)
         {
-            if (c == l)
-            {
-                is_in_string = true;
-                break;
-            }
-            ++count;
-            if (count == len)
-            {
-                return false;
-            }
+            return false;
         }
     }
-    return is_in_string;
+
+    return true;
 }
 
-string inStringRemove(string const& key, string r)
+bool downIsShorter(TreeGrid& g, int center, int x, int y)
 {
-    for (auto const& c:key)
+    int y_size = g.size();
+    for (int i=y+1; i < y_size; i++)
     {
-        for (auto const& l:r)
+        if (g[i][x] >= center)
         {
-            if (c == l)
-            {
-                r.erase(remove(r.begin(), r.end(), c), r.end());
-            }
+            return false;
         }
     }
-    return r;
+    return true;
 }
 
-vector<string> decode(vector<string>& input)
+int upView(TreeGrid& g, int center, int x, int y)
 {
-    vector<string> decoded(10);
-    int decoded_count{};
-
-    while (decoded_count < 3)
+    int dist{1};
+    for (int i=y-1; i > 0; i--)
     {
-        for (auto & code:input)
+        if (g[i][x] >= center)
         {
-            if (code == "")
-            {
-                continue;
-            }
-            int size = code.length();
-            if ((size == 2) || (size == 4) || (size == 3) || (size == 7))
-            {
-                switch(size){
-                    case 2: decoded[1] = code; break;
-                    case 4: decoded[4] = code; break;
-                    case 3: decoded[7] = code; break;
-                    case 7: decoded[8] = code; break;
-                }
-                code = "";
-                decoded_count += 1;
-            }
+            break;
         }
+        dist++;
     }
-
-    decoded_count = 0;
-    while (decoded_count < 5)
-    {
-        for (auto & code:input)
-        {
-            if (code == "")
-            {
-                continue;
-            }
-            int size = code.length();
-            if (size == 5)
-            {
-                string test = inStringRemove(decoded[1], decoded[4]);
-                if (isInString(decoded[1], code))
-                {
-                    decoded[3] = code;
-                    code = "";
-                    decoded_count +=1;
-                }
-                else if (isInString(test, code))
-                {
-                    decoded[5] = code;
-                    code = "";
-                    decoded_count +=1;
-                }
-                else if(!isInString(test, code))
-                {
-                    decoded[2] = code;
-                    code = "";
-                    decoded_count +=1;
-                }
-            }
-            if (size == 6)
-            {
-                if (!isInString(decoded[1], code))
-                {
-                    decoded[6] = code;
-                    code = "";
-                    decoded_count += 1;
-                }
-                else if(isInString(decoded[4], code))
-                {
-                    decoded[9] = code;
-                    code = "";
-                    decoded_count += 1;
-                }
-                else
-                {
-                    decoded[0] = code;
-                    code = "";
-                    decoded_count += 1;
-                }
-            }
-        }
-    }
-
-    return decoded;
+    return dist;
 }
 
-bool isIdenticalWiring(string const& key, string const& to_check)
+int rightView(TreeGrid& g, int center, int x, int y)
 {
-    if (key.length() != to_check.length())
+    int dist{1};
+    int x_size = g[0].size();
+    for (int i=x+1; i < x_size-1; i++)
     {
-        return false;
-    }
-    bool is_in_string = false;
-    int len = to_check.length();
-    for (auto const& c:key)
-    {
-        is_in_string = false;
-        int count = 0;
-        for (auto const& l:to_check)
+        if (g[y][i] >= center)
         {
-            if (c == l)
-            {
-                is_in_string = true;
-                break;
-            }
-            ++count;
-            if (count == len)
-            {
-                return false;
-            }
+            break;
         }
+        dist++;
     }
-    return is_in_string;
+
+    return dist;
 }
 
-string decode_digit(vector<string> const& decode, vector<string> const& output)
+int leftView(TreeGrid& g, int center, int x, int y)
 {
-    string digit{};
-    for (auto const& o:output)
+    int dist{1};
+    int x_size = g[0].size();
+    for (int i=x-1; i > 0; i--)
     {
-        int iter = 0;
-        for (auto const& d:decode)
+        if (g[y][i] >= center)
         {
-            if (isIdenticalWiring(d, o))
-            {
-                digit += to_string(iter);
-            }
-            ++iter;
+            break;
         }
+        dist++;
     }
-    return digit;
+
+    return dist;
 }
 
-void partOne(string const& filename)
+int downView(TreeGrid& g, int center, int x, int y)
 {
-    ifstream f{filename};
-    string line;
-    vector<string> output;
-    vector<vector<string>> outputs;
-    while(getline(f,line))
+    int dist{1};
+    int y_size = g.size();
+    for (int i=y+1; i < y_size-1; i++)
     {
-        bool delimiterReached = false;
-        stringstream ss(line);
-        for (string i; ss >> i;)
+        if (g[i][x] >= center)
         {
-            if (i == "|")
-            {
-                delimiterReached = true;
-                continue;
-            }
-            if (delimiterReached)
-            {
-                output.push_back(i);
-            }
+            break;
         }
-        outputs.push_back(output);
-        output.clear();
+        dist++;
     }
-    //1: size = 2
-    //4: size = 4
-    //7: size = 3
-    //8: size = 7
-    int sum = 0;
-    for (auto const& output:outputs)
-    {
-        for (auto const& c:output)
-        {
-            int size = c.length();
-            if ((size == 2) || (size == 4) || (size == 3) || (size == 7))
-            {
-                ++sum;
-            }
-        }
-    }
-
-    cout << "The digits on question appears " << sum << " number of times." << endl;
+    return dist;
 }
 
-void partTwo(string const& filename)
-{
-    ifstream f{filename};
-    string line;
-
-    vector<string> input;
-    vector<string> output;
-    vector<int> decoded_digits{};
-
-
-    while(getline(f,line))
-    {
-        bool delimiterReached = false;
-        stringstream ss(line);
-        for (string i; ss >> i;)
-        {
-            if (i == "|")
-            {
-                delimiterReached = true;
-                continue;
-            }
-            if (!delimiterReached)
-            {
-                input.push_back(i);
-            }
-            else
-            {
-                output.push_back(i);
-            }
-        }
-        vector<string> decoded = decode(input);
-        //print(output);
-        string digit = decode_digit(decoded, output);
-        decoded_digits.push_back(stoi(digit));
-        input.clear();
-        output.clear();
-    }
-    int sum = accumulate(decoded_digits.begin(), decoded_digits.end(), 0);
-
-    cout << "The total sum is " << sum << endl;
-}
-
-int main(int argv, char** argc)
-{
-    //partOne(argc[1]);
-    partTwo(argc[1]);
+//This part could have done cleaner by checking if there
+//is a number that is larger than the center number in both row/column
+//If true then view is blocked.
+void partOne()
+{   
+    string input;
+    ifstream file("day8.txt");
     
-    //cout << isInString("ab", "cdfgeb");
+    TreeGrid grid;
+    int grid_y_size{};
+    int grid_x_size{};
+
+    while (getline(file,input))
+    {
+        vector<int> row;
+        for (char& c:input)
+        {
+            row.push_back(c - '0');
+        }
+        grid.push_back(row);
+    }
+    grid_x_size = grid[0].size();
+    grid_y_size = grid.size();
+
+    int number_hidden_trees{};
+    for (int y=1; y < grid_y_size - 1; y++)
+    {
+        for (int x=1; x < grid_x_size - 1; x++)
+        {
+            int center = grid[y][x];
+            bool rightOK = rightIsShorter(grid, center, x, y);
+            bool leftOK = leftIsShorter(grid, center, x, y);
+            bool upOK = upIsShorter(grid, center, x, y);
+            bool downOK = downIsShorter(grid, center, x, y);
+
+            if ((rightOK) || (leftOK) || (upOK) || (downOK))
+            {
+                number_hidden_trees++;
+            }
+        }
+    }
+    number_hidden_trees += 2*grid_y_size + 2*(grid_x_size-2);
+    
+
+    cout << "Part 1: The number of hidden trees are " << number_hidden_trees << endl;
+
+}
+
+void partTwo()
+{
+    string input;
+    ifstream file("day8.txt");
+
+    TreeGrid grid;
+    int grid_y_size{};
+    int grid_x_size{};
+
+    while (getline(file,input))
+    {
+        vector<int> row;
+        for (char& c:input)
+        {
+            row.push_back(c - '0');
+        }
+        grid.push_back(row);
+    }
+    grid_x_size = grid[0].size();
+    grid_y_size = grid.size();
+
+    int top_score{};
+    for (int y=1; y < grid_y_size-1; y++)
+    {
+        for (int x=1; x < grid_x_size-1; x++)
+        {
+            int center = grid[y][x];
+            int right_view = rightView(grid, center, x, y);
+            int left_view = leftView(grid, center, x, y);
+            int up_view = upView(grid, center, x, y);
+            int down_view = downView(grid, center, x, y);
+
+            int scenic_score = right_view * left_view * up_view * down_view;
+            if (scenic_score > top_score)
+            {
+                top_score = scenic_score;
+            }
+        }
+    }
+
+    cout << "Part 2: The tree with best view has a scenic score of " << top_score << endl;
+
+    
+}
+
+int main()
+{
+    partOne();
+    partTwo();
     return 0;
 }

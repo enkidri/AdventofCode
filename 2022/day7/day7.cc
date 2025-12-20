@@ -1,99 +1,276 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <numeric>
-#include <math.h>
-#include <sstream>
-#include <algorithm>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
+#include<algorithm>
+#include<iterator>
+#include<numeric>
+#include<regex>
+#include<stack>
+#include<queue>
+#include<set>
+#include<map>
+#include<sstream>
+#include<functional>
+#include<algorithm>
 using namespace std;
 
-int main_for_part_2(int argv, char** argc)
+class Dict
 {
-    vector<int> pos;
-    ifstream f{argc[1]};
-    string line{};
-    while(getline(f,line))
-    {
-        stringstream ss(line);
-        for (int i; ss >> i;)
+    private:
+        struct Node;
+    public:
+        Dict(void)
         {
-            pos.push_back(i);
-            if (ss.peek() == ',')
+            current = new Node{};
+            first = current;
+            (*current).previous = nullptr;
+            max_size = 70000000;
+            space_needed = 30000000;
+        }
+
+        void insertFile(unsigned long int filesize)
+        {
+            (*current).files.push_back(filesize);
+            (*current).file_sizes += filesize;
+        }
+
+        void insertMap(string& map)
+        {
+            (*current).folders.insert({map, new Node{}});
+        }
+
+        void doCD(string& map)
+        {
+            Node* tmp = current;
+            current = (*current).folders.at(map);
+            (*current).previous = tmp;
+            (*current).foldername = map;
+        }
+
+        void doReturn()
+        {
+            current = (*current).previous;
+        }
+
+        void recursion(Node* p)
+        {
+            if ((*p).folders.empty())
             {
-                ss.ignore();
+                //cout << "if " << (*p).foldername << endl;
+                if ((*p).file_sizes < 100000)
+                {
+                    total_size += (*p).file_sizes;
+                }
+                return;
+            }
+            for (auto& i : (*p).folders)
+            {
+                recursion(i.second);
+                (*p).child_size += (*i.second).file_sizes;
+                //cout << "out " << (*p).foldername << endl;
+            }
+            (*p).file_sizes += (*p).child_size;
+            //cout << (*p).foldername << " " << (*p).file_sizes << endl;
+            if ((*p).file_sizes < 100000)
+            {
+                total_size += (*p).file_sizes;
             }
         }
-    }
 
-    int max = *max_element(pos.begin(), pos.end());
-
-    int cost{};
-    vector<int> costs;
-    int average = 0;
-    for (int i=0; i < max; ++i)         //Brute fucking force motherfucker
-    {
-        cost = 0;
-        for (auto const& p:pos)
+        void recursiveExplore(Node* p)
         {
-            int dist = abs(p-average);
-            cost += dist*(1 + dist) / 2;
+            if ((*p).folders.empty())
+            {
+                //cout << "if " << (*p).foldername << endl;
+                if ((*p).file_sizes > space_needed - available_space)
+                {
+                    v_sizes.push_back((*p).file_sizes);
+                }
+                return;
+            }
+            for (auto& i : (*p).folders)
+            {
+                recursiveExplore(i.second);
+            }
+
+            if ((*p).file_sizes > space_needed - available_space)
+            {
+                v_sizes.push_back((*p).file_sizes);
+            }
         }
-        costs.push_back(cost);
-        ++average;
-    }
 
-    cout << "The minimal cost is " << *min_element(costs.begin(), costs.end()) << endl;
+        //debugging
+        void printCurrentFolders()
+        {
+            for (auto& i:(*current).folders)
+            {
+                cout << i.first << endl;
+            }
+        }
+        
+        //debugging
+        void printFiles()
+        {
+            for (auto& i:(*current).files)
+            {
+                cout << i << endl;
+            }
+        }
 
-    return 0;
+        Node* getFirst()
+        {
+            return first;
+        }
+
+        int getUsedSpace()
+        {
+            return first->folders["/"]->file_sizes;
+        }
+
+        void setAvailableSpace()
+        {
+            available_space = max_size - first->folders["/"]->file_sizes;
+        }
+
+        unsigned long int getAnswer()
+        {
+            return total_size;
+        }
+
+        int getAnswerPartTwo()
+        {
+            return *min_element(v_sizes.begin(), v_sizes.end());
+        }
+
+    private:
+        struct Node
+        {
+            string foldername;
+            vector<int> files;
+            unsigned long int file_sizes{};
+            map<string,Node*> folders;
+            Node* previous;
+            unsigned long int child_size{};
+        };
+
+        Node* current;
+        Node* first;
+        unsigned long int total_size{};
+        int max_size;
+        int available_space;
+        int space_needed;
+        vector<int> v_sizes;
+};
+
+vector<string> stringSplit(string& s)
+{
+    stringstream ss(s);
+    istream_iterator<string> begin(ss);
+    istream_iterator<string> end;
+    vector<string> vstrings(begin, end);
+    
+    return vstrings;
 }
 
-
-int main(int argv, char** argc)
+bool isNumeric(const std::string& s)
 {
-    vector<int> pos;
-    ifstream f{argc[1]};
-    string line{};
-    while(getline(f,line))
+    return !s.empty() && std::find_if(s.begin(), 
+        s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
+//add end of getline func
+void partOne()
+{
+    string input;
+    ifstream file("day7.txt");
+    Dict dict;
+    string start_map = "/";
+    dict.insertMap(start_map);    //adds the larger single map
+
+    //Reads all the line to the dict data structure
+    while (getline(file,input))
     {
-        stringstream ss(line);
-        for (int i; ss >> i;)
+        vector<string> commands = stringSplit(input);
+        if ((commands[0] == "$") && (commands[1] == "cd"))
         {
-            pos.push_back(i);
-            if (ss.peek() == ',')
+            if (commands[2] == "..")
             {
-                ss.ignore();
+                dict.doReturn();
+            }
+            else
+            {
+                dict.doCD(commands[2]);
+            }
+        }
+        else
+        {
+            if (commands[0] == "dir")
+            {
+                dict.insertMap(commands[1]);
+            }
+            if (isNumeric(commands[0]))
+            {
+                dict.insertFile(stoi(commands[0]));
+            }
+        }
+    }
+    dict.recursion(dict.getFirst());
+
+    cout << "Part 1: The total sum of specified dictionaries is " << dict.getAnswer() << endl;
+
+}
+
+void partTwo()
+{
+    string input;
+    ifstream file("day7.txt");
+
+    Dict dict;
+    string start_map = "/";
+    dict.insertMap(start_map);    //adds the larger single map
+
+    //Reads all the line to the dict data structure
+    while (getline(file,input))
+    {
+        vector<string> commands = stringSplit(input);
+        if ((commands[0] == "$") && (commands[1] == "cd"))
+        {
+            if (commands[2] == "..")
+            {
+                dict.doReturn();
+            }
+            else
+            {
+                dict.doCD(commands[2]);
+            }
+        }
+        else
+        {
+            if (commands[0] == "dir")
+            {
+                dict.insertMap(commands[1]);
+            }
+            if (isNumeric(commands[0]))
+            {
+                dict.insertFile(stoi(commands[0]));
             }
         }
     }
 
-    int n = pos.size();
-    int median{};
-    if (n % 2 == 0)
-    {
-        nth_element(pos.begin(), pos.begin() + n/2, pos.end());
-        int a = pos[n/2];
-        nth_element(pos.begin(), pos.begin() + (n-1)/2, pos.end());
-        int b = pos[(n-1)/2];
-        median = (a + b) / 2;
-    }
-    else
-    {
-        nth_element(pos.begin(), pos.begin() + n/2, pos.end());
-        median = pos[n / 2];
-    }
+    dict.recursion(dict.getFirst());
+    dict.setAvailableSpace();
+    dict.recursiveExplore(dict.getFirst());
 
-    cout << median << endl;
+    cout << "Part 2: The smallest dictionary that frees enough space has the size of "
+         << dict.getAnswerPartTwo() << endl;
 
-    int cost{};
-    for (auto const& p:pos)
-    {
-        cost += abs(p-median);
-    }
+    
+}
 
-    cout << "The total cost is " << cost << endl;
-
-
-
+int main()
+{
+    partOne();
+    partTwo();
     return 0;
 }

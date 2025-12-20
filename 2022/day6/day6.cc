@@ -1,44 +1,68 @@
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <string>
-#include <regex>
-#include <algorithm>
-#include <numeric>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
+#include<algorithm>
+#include<iterator>
+#include<numeric>
+#include<regex>
+#include<stack>
+#include<queue>
+#include<set>
 using namespace std;
 
-//part two only
-int main(int argc, char* argv[])
+
+void partOne()
 {
-    vector<uint64_t> school(9);
-    ifstream f{argv[1]};
-    string line;
+    string input{};
+    ifstream file("day6.txt");
+    getline(file, input);
 
-    while(getline(f,line))
+    int processed_packets{};
+    for (int i=0; i < input.length() - 3; i++)
     {
-        for (auto const& digit:line)
+        string s = input.substr(i, 4);
+        set<char> marker(s.begin(), s.end());
+        if (marker.size() == s.size())
         {
-            if (!isdigit(digit))
-            {
-                continue;
-            }
-            school[digit - '0'] += 1;
+            processed_packets = i + 4;
+            break;
         }
+        
     }
 
-    int days = stoi(argv[2]);
-    for (int i=0; i < days; ++i)
+    cout << "Part 1: The number of packets before start-of-packets is " 
+         << processed_packets << endl;
+}
+
+void partTwo()
+{
+    string input{};
+    ifstream file("day6.txt");
+    getline(file, input);
+    int message_start_len = 14;
+
+    int processed_packets{};
+    for (int i=0; i < input.length() - message_start_len; i++)
     {
-        uint64_t newborn = school[0];       //uints has to be used to compute the answer (it is that high!!)
-        school.erase(school.begin());
-        school.push_back(0);
-        school[8] += newborn;
-        school[6] += newborn;
+        string s = input.substr(i, message_start_len);
+        set<char> marker(s.begin(), s.end());
+        if (marker.size() == s.size())
+        {
+            processed_packets = i + message_start_len;
+            break;
+        }
+        
     }
-    uint64_t zero = 0;
-    uint64_t total = accumulate(school.begin(), school.end(), zero);    //zero has to be uint not to convert to int (just in case)
 
-    cout << "The total of lanternfish after " << days <<" days is " << total << endl;
-    
+    cout << "Part 2: The number of packets before start-of-message is " 
+         << processed_packets << endl;
+
+}
+
+int main()
+{
+    partOne();
+    partTwo();
     return 0;
 }

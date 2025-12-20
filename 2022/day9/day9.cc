@@ -1,346 +1,196 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<vector>
+#include<algorithm>
+#include<iterator>
+#include<numeric>
+#include<regex>
+#include<stack>
+#include<queue>
+#include<set>
+#include<map>
+#include<sstream>
+#include<functional>
+#include<algorithm>
+#include<cstdlib>
 using namespace std;
 
-//Very inefficient code and much larger than it needs to be
-//but it does the job I guess.
+typedef pair<int,int> Position;
 
-class heightMap
+vector<string> stringSplit(string& s)
 {
-    public:
-        heightMap()
-        {}
-
-        void insertRow(string const& line)
-        {
-            for (auto const& digit:line)
-            {
-                row.push_back(digit - '0');
-            }
-            heightValues.push_back(row);
-            row.clear();
-        }
-
-        void print()
-        {
-            for (auto const& y:heightValues)
-            {
-                for (auto const& x:y)
-                {
-                    cout << x << " ";
-                }
-                cout << endl;
-            }
-        }
-
-        void findLow()
-        {
-            int row_size = heightValues.size();
-            int col_size = heightValues[0].size();
-            for (int y=0; y < row_size; ++y)
-            {
-                vector<int> row = heightValues[y];
-                for (int x=0; x < col_size; ++x)
-                {
-                    int curr = row[x];
-                    int idx_up;
-                    int idx_down;
-                    int idx_right;
-                    int idx_left;
-                    if ((x == 0) && (y == 0)) //Upper left
-                    {
-                        if ((row[x+1] > curr) && (heightValues[1][0] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((x == col_size - 1) && (y == 0)) //Upper right
-                    {
-                        if ((row[x-1] > curr) && (heightValues[1][x] > curr)) 
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((x == 0) && (y == row_size - 1)) //Lower left
-                    {
-                        if ((row[x+1] > curr) && (heightValues[y-1][0] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((x == col_size - 1) && (y == row_size - 1)) //Lower right
-                    {
-                        if ((row[x-1] > curr) && (heightValues[row_size -2][x] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((y == 0) && (0 < x < col_size -1))  //Upper edge
-                    {
-                        if ((row[x+1] > curr) && (heightValues[1][x] > curr) && (row[x-1] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((y == row_size - 1) && (0 < x < col_size -1))  //Lower edge
-                    {
-                        if ((row[x+1] > curr) && (heightValues[y-1][x] > curr) && (row[x-1] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((x == 0) && (0 < x < row_size -1))  //left edge
-                    {
-                        if ((row[x+1] > curr) && (heightValues[y-1][x] > curr) && (heightValues[y+1][x] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else if((x == col_size - 1) && (0 < x < row_size -1))  //left edge
-                    {
-                        if ((row[x-1] > curr) && (heightValues[y-1][x] > curr) && (heightValues[y+1][x] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                    else
-                    {
-                        if ((row[x+1] > curr) && (row[x-1] > curr) && (heightValues[y-1][x] > curr) && (heightValues[y+1][x] > curr))
-                        {
-                            ++low_count; 
-                            risk_level += curr + 1;
-                            // cout << curr << endl;
-                        }
-                    }
-                }
-            }
-        }
-
-        void findAllBasins()
-        {
-            int row_size = heightValues.size();
-            int col_size = heightValues[0].size();
-            for (int y=0; y < row_size; ++y)
-            {
-                vector<int> row = heightValues[y];
-                for (int x=0; x < col_size; ++x)
-                {
-                    int curr = row[x];
-                    int idx_up;
-                    int idx_down;
-                    int idx_right;
-                    int idx_left;
-                    if ((x == 0) && (y == 0)) //Upper left
-                    {
-                        if ((row[x+1] > curr) && (heightValues[1][0] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((x == col_size - 1) && (y == 0)) //Upper right
-                    {
-                        if ((row[x-1] > curr) && (heightValues[1][x] > curr)) 
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((x == 0) && (y == row_size - 1)) //Lower left
-                    {
-                        if ((row[x+1] > curr) && (heightValues[y-1][0] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((x == col_size - 1) && (y == row_size - 1)) //Lower right
-                    {
-                        if ((row[x-1] > curr) && (heightValues[row_size -2][x] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((y == 0) && (0 < x < col_size -1))  //Upper edge
-                    {
-                        if ((row[x+1] > curr) && (heightValues[1][x] > curr) && (row[x-1] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((y == row_size - 1) && (0 < x < col_size -1))  //Lower edge
-                    {
-                        if ((row[x+1] > curr) && (heightValues[y-1][x] > curr) && (row[x-1] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((x == 0) && (0 < x < row_size -1))  //left edge
-                    {
-                        if ((row[x+1] > curr) && (heightValues[y-1][x] > curr) && (heightValues[y+1][x] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else if((x == col_size - 1) && (0 < x < row_size -1))  //left edge
-                    {
-                        if ((row[x-1] > curr) && (heightValues[y-1][x] > curr) && (heightValues[y+1][x] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                    else
-                    {
-                        if ((row[x+1] > curr) && (row[x-1] > curr) && (heightValues[y-1][x] > curr) && (heightValues[y+1][x] > curr))
-                        {
-                            basin_sizes.push_back(findBasinSize(heightValues, y, x));
-                            // cout << y << " " << x << endl;
-                        }
-                    }
-                }
-            }
-        }
-
-        void floodFill(vector<vector<int>>& myScreen, int x, int y, int currColor, int& count) 
-        { 
-            int M = heightValues.size();
-            int N = heightValues[0].size();
-            // Base cases 
-            if (x < 0 || x >= M || y < 0 || y >= N) 
-                return; 
-            if (myScreen[x][y] == 9) 
-                return; 
-        
-            // Replace the color at cell (x, y) 
-            myScreen[x][y] = 9; 
-            ++count;
-        
-            // Recursively call for north, east, south and west 
-            floodFill(myScreen, x+1, y, currColor, count); 
-            floodFill(myScreen, x-1, y, currColor, count); 
-            floodFill(myScreen, x, y+1, currColor, count); 
-            floodFill(myScreen, x, y-1, currColor, count); 
-        } 
-
-        int findBasinSize(vector<vector<int>>& myScreen, int x, int y) 
-        { 
-            int count = 0;
-            int currColor = myScreen[x][y]; 
-            floodFill(myScreen, x, y, currColor, count); 
-            return count;
-        } 
-
-        int getRisk()
-        {
-            return risk_level;
-        }
-        
-        int getCount()
-        {
-            return low_count;
-        }
-
-        int getMaxBasin()
-        {
-            return *max_element(basin_sizes.begin(), basin_sizes.end());
-        }
-
-        void printBasinSize()
-        {
-            cout << "The basin sizes are: ";
-            for (auto& nr:basin_sizes)
-            {
-                cout << nr << " ";
-            }
-            cout << endl;
-        }
-
-        int findSpecificBasin()
-        {
-            int size = findBasinSize(heightValues, 4, 6);
-            return size;
-        }
-
-        int findMaxAndRemove()
-        {
-            vector<int>::iterator m = max_element(basin_sizes.begin(), basin_sizes.end());
-            int idx = distance(basin_sizes.begin(), m);
-            int max_val = *m;
-            basin_sizes.erase(basin_sizes.begin()+idx, basin_sizes.begin()+idx+1);
-            return max_val;
-        }
-
-    private:
-        vector<vector<int>> heightValues;
-        vector<int> row;
-        vector<int> basin_sizes{};
-        int low_count{};
-        int risk_level{};
-
-};
-
-void partTwo(string const& filename)
-{
-    ifstream f{filename};
-    string line{};
-    heightMap m;
-
-    while(getline(f,line))
-    {
-        m.insertRow(line);
-    }
-    m.findAllBasins();
+    stringstream ss(s);
+    istream_iterator<string> begin(ss);
+    istream_iterator<string> end;
+    vector<string> vstrings(begin, end);
     
-    int sol = 1;
-    for (int i=0; i < 3; ++i)
-    {
-        sol *= m.findMaxAndRemove();
-    }
-
-    cout << "The product of the three largest basin is " << sol << endl;
+    return vstrings;
 }
 
-void partOne(string const& filename)
-{
-    ifstream f{filename};
-    string line{};
-    heightMap m;
+void partOne()
+{   
+    string input;
+    ifstream file("day9.txt");
+    
 
-    while(getline(f,line))
+    //Getting the data
+    vector<vector<string>> instructions;
+    while (getline(file, input))
     {
-        m.insertRow(line);
+        vector<string> instruct = stringSplit(input);
+        instructions.push_back(instruct);
     }
-    m.findLow();
-    cout << "The risk level is " << m.getRisk() << endl;
+
+    //Actual algorithm
+    Position head{0,0};
+    Position tail{head};
+    set<Position> visited_positions;
+    visited_positions.insert(head);
+
+    for (int i=0; i < instructions.size(); i++)
+    {
+        vector<string> instruct = instructions[i];
+        string dir = instruct[0];
+        int length = stoi(instruct[1]);
+
+        for (int i=0; i < length; i++)
+        {
+            Position head_prev = head;
+            if (dir == "R")
+            {
+                head.first++;
+            }
+            else if (dir == "L")
+            {
+                head.first--;
+            }
+            else if (dir == "U")
+            {
+                head.second++;
+            }
+            else if (dir == "D")
+            {
+                head.second--;
+            }
+
+            if ((abs(head.first - tail.first) >= 2) || (abs(head.second - tail.second) >= 2))
+            {
+                tail = head_prev;
+                visited_positions.insert(tail);
+            }
+        }
+    }
+    
+    cout << "Part 1: The number of unique positions visited is " << visited_positions.size() << endl;
+
 }
 
-int main(int argc, char** argv)
+void moveOne(set<Position>& vp, vector<Position>& knots, string dir)
 {
-    partTwo(argv[1]);
+    vector<Position>::iterator head = knots.begin();
+    Position head_prev = *head;
+    
+    if (dir == "R") 
+    {
+        (*head).first++;
+    }
+    else if (dir == "L")
+    {
+        (*head).first--;
+    }
+    else if (dir == "U")
+    {
+        (*head).second++;
+    }
+    else if (dir == "D")
+    {
+        (*head).second--;
+    }
+
+
+    for (int i=0; i < knots.size() - 1; i++)
+    {
+        vector<Position>::iterator knot = head + i;
+        vector<Position>::iterator tail = (knot + 1);
+
+        if ((abs((*knot).first - (*tail).first) < 2) && (abs((*knot).second - (*tail).second) < 2))
+        {
+            break;
+        } 
+
+        //Up
+        if (((((*knot).first - (*tail).first) == 0) && (((*knot).second - (*tail).second) >= 2)))
+        {
+            (*tail).second++;
+        } //Left
+        else if (((((*knot).first - (*tail).first) <= -2) && (((*knot).second - (*tail).second) == 0)))
+        {
+            (*tail).first--;
+        } //Right
+        else if (((((*knot).first - (*tail).first) >= 2) && (((*knot).second - (*tail).second) == 0)))
+        {
+            (*tail).first++;
+        } //Down
+        else if (((((*knot).first - (*tail).first) == 0) && (((*knot).second - (*tail).second) <= -2)))
+        {
+            (*tail).second--;
+        }
+
+        //First quadrant
+        if (((((*knot).first - (*tail).first) >= 1) && (((*knot).second - (*tail).second) >= 1)))
+        {
+            (*tail).first++;
+            (*tail).second++;
+        } //Second quadrant
+        else if (((((*knot).first - (*tail).first) <= -1) && (((*knot).second - (*tail).second) >= 1)))
+        {
+            (*tail).first--;
+            (*tail).second++;
+        } //Third quadrant
+        else if (((((*knot).first - (*tail).first) <= -1) && (((*knot).second - (*tail).second) <= -1)))
+        {
+            (*tail).first--;
+            (*tail).second--;
+        } //Fourth quadrant
+        else if (((((*knot).first - (*tail).first) >= 1) && (((*knot).second - (*tail).second) <= -1)))
+        {
+            (*tail).first++;
+            (*tail).second--;
+        }
+
+    }
+    vp.insert(*(knots.end()-1));
+}
+
+void partTwo()
+{
+    string input;
+    ifstream file("day9.txt");
+
+    int total_knots{10};
+    Position start{0,0};
+    vector<Position> knots(10, start);
+    set<Position> visited_positions;
+    visited_positions.insert(start);
+    while (getline(file, input))
+    {
+        vector<string> instruct = stringSplit(input);
+        string dir = instruct[0];
+        int len = stoi(instruct[1]);
+
+        for (int i=0; i < len; i++)
+        {
+            moveOne(visited_positions, knots, dir);
+        }
+    }
+
+    cout << "Part 2: The unique positions passed is: " << visited_positions.size() << endl;
+}
+
+int main()
+{
+    partOne();
+    partTwo();
     return 0;
 }

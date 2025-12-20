@@ -1,206 +1,255 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <vector>
 #include <algorithm>
-#include <map>
+#include <iterator>
+#include <numeric>
 #include <regex>
-#include <fstream>
-#include <iomanip>
-#include <utility>
+#include <stack>
+#include <queue>
+#include <set>
+#include <map>
 #include <sstream>
-#include <istream>
+#include <functional>
+#include <algorithm>
+#include <cstdlib>
+#include <cmath>
+#include <iomanip>
+#include <variant>
 using namespace std;
 
-class Polymer
+// Holy hell sets are so fkin fast at checking if elements exists.
+// Vectors fkn sucks lol
+// Naive implementation of the problem. Every grain of sand is simulated.
+
+typedef pair<int,int> Coord;
+typedef vector<Coord> Rock;
+typedef vector<Rock> Rocks;
+
+Rocks parse(ifstream& file)
 {
-    public:
-        Polymer()
-        {}
-        
-        void addInput()
-        {
-            ifstream f{"day14.txt"};
-            string line;
-            getline(f,line);
-            polyString = line;
-            polyCountAdd();     //Adds the first line
-
-
-            for (int i=0; i < polyString.length()-1; ++i)
-            {
-                if (polyStringMap.find(polyString.substr(i,2)) == polyStringMap.end())
-                    polyStringMap[polyString.substr(i,2)];
-                ++polyStringMap[polyString.substr(i,2)];
-            }
-            
-            f.ignore();     //Ignore empty line
-            while (getline(f,line))
-            {
-                stringstream ss(line);
-                string key;
-                char value;
-                string temp;
-                ss >> key >> temp >> value;
-                polyMap[key] = value;
-
-                if (polyStringMap.find(key) == polyStringMap.end())
-                    polyStringMap[key];
-                if (polyCount.find(value) == polyCount.end())
-                    polyCount[value];
-            }
-            //addCountStart(polyString);
-        }
-
-        void step()
-        {
-            stringstream ss;
-            string new_polymer;
-            string curr_subStr = polyString.substr(0,2);
-            ss << curr_subStr[0] << polyMap[curr_subStr] << curr_subStr[1];
-            new_polymer += ss.str();
-            ss.str("");
-
-            for (unsigned long long int i=1; i < polyString.length() - 1; ++i)
-            {
-                string curr_subStr = polyString.substr(i,2);
-                ss << polyMap[curr_subStr] << curr_subStr[1];
-                new_polymer += ss.str();
-                ss.str("");
-
-                if (polyCount.find(polyMap[curr_subStr]) == polyCount.end())
-                {
-                    polyCount[polyMap[curr_subStr]];
-                }
-                ++polyCount[polyMap[curr_subStr]];
-            }
-            polyString = new_polymer;
-        }
-
-        void stepNew()          //Faster/smartar than step()
-        {
-            stringstream ss;
-            map<string, unsigned long long int> temp_polyStringMap = polyStringMap;
-            for (auto& p:polyStringMap)
-            {
-                if (p.second == 0)
-                    continue;
-                ss << polyMap[p.first] << (p.first)[1];
-                string a = ss.str(); 
-                ss.str("");
-
-                ss << (p.first)[0] << polyMap[p.first];
-                string b = ss.str(); 
-                ss.str("");
-                temp_polyStringMap[a] += p.second;
-                temp_polyStringMap[b] += p.second;
-
-                temp_polyStringMap[p.first] -= p.second;
-                
-                polyCount[polyMap[p.first]] += polyStringMap[p.first];
-            }
-            polyStringMap = temp_polyStringMap;
-        }
-
-        string getPolymer()
-        {
-            return polyString;
-        }
-
-        int partOneRes()
-        {
-            for (auto& c:polyString)
-            {
-                if (polyCount.find(c) == polyCount.end())
-                {
-                    polyCount[c];
-                }
-                ++polyCount[c];
-            }
-
-            unsigned long long int min_val = (*min_element(polyCount.begin(), polyCount.end(), [](auto& a, auto& b)
-            {
-                return a.second < b.second;
-            })).second;
-            unsigned long long int max_val = (*max_element(polyCount.begin(), polyCount.end(), [](auto& a, auto& b)
-            {
-                return a.second < b.second;
-            })).second;
-            return max_val - min_val;
-        }
-
-        unsigned long long int partTwoRes()
-        {
-            unsigned long long int min_val = (*min_element(polyCount.begin(), polyCount.end(), [](auto& a, auto& b)
-            {
-                return a.second < b.second;
-            })).second;
-            unsigned long long int max_val = (*max_element(polyCount.begin(), polyCount.end(), [](auto& a, auto& b)
-            {
-                return a.second < b.second;
-            })).second;
-            return max_val - min_val;
-        }
-
-        void printCount()
-        {
-            for (auto const& p:polyCount)
-            {
-                cout << p.first << " " << p.second << endl;
-            }
-        }
-
-    private:
-        void polyCountAdd()
-        {
-            for (auto& c:polyString)
-            {
-                if (polyCount.find(c) == polyCount.end())
-                {
-                    polyCount[c];
-                }
-                ++polyCount[c];
-            }
-        }
-
-        string polyString;
-        map<string, unsigned long long int> polyStringMap; //Counts of groups of AA, BB, CC...
-        map<string, char> polyMap;                          
-        map<char, unsigned long long int> polyCount;        //Counts of singels A,B,C...
-
-};
-
-void partTwo()
-{
-    Polymer polymer;
-    polymer.addInput();
-    int stepCount = 40;
-    for (int i=1; i <= stepCount; ++i)
+    string input;
+    regex regex(R"((\d+),(\d+))");
+    smatch match;
+    Rocks rs;
+    while (getline(file, input))
     {
-        polymer.stepNew();
+        Rock r;
+        while (regex_search(input, match, regex))
+        {
+            int x = stoi(match[1].str());
+            int y = stoi(match[2].str());
+            r.push_back({x,y});
+            input = match.suffix();
+        }
+        rs.push_back(r);
     }
-    polymer.printCount();
 
-    cout << "The result of the subtraction of max element and min element is " 
-         << polymer.partTwoRes() << endl;
+    return rs;
+}
+
+void rocksPrinter(Rocks& rocks)
+{
+    for (auto& r:rocks)
+    {
+        for (auto& coord:r)
+        {
+            cout << coord.first << "," << coord.second << "  ";
+        }
+        cout << endl;
+    }
 }
 
 
-void partOne()
+bool drop(vector<Coord>& rock, int lwst)
 {
-    Polymer polymer;
-    polymer.addInput();
-    int stepCount = 10;
-    for (int i=1; i <= stepCount; ++i)
+    Coord current = {500, 0};
+    bool is_stationary = false;
+    bool is_overflow = false;
+
+    while (!is_stationary)
     {
-        polymer.step();
-        //cout << "After step " << i << ": " << polymer.getPolymer() << endl;
+        Coord prev = current;
+        current.first++;
+        if (current.second > lwst)
+        {
+            is_overflow = true;
+            break;
+        } 
+        
+        if (find(rock.begin(), rock.end(), current) != rock.end())
+        {
+            Coord left = {current.first, current.second -1};
+            Coord right = {current.first, current.second +1};
+            if (find(rock.begin(), rock.end(), left) == rock.end())
+            {
+                current.second--;
+                break;
+            }
+            else if (find(rock.begin(), rock.end(), right) == rock.end())
+            {
+                current.first++;
+                break;
+            }
+            else {
+                is_stationary = true;
+                rock.push_back(prev);
+                break;
+            }
+        }
     }
-    cout << "The result of the subtraction of max element and min element is " 
-         << polymer.partOneRes() << endl;
+    return is_overflow;
+}
+
+pair<int,set<Coord>> transform(Rocks& r)
+{
+    set<Coord> platform;
+    int lowest_platform{};
+    for (auto& rock:r)
+    {
+        for (int i=0; i < rock.size()-1; i++)
+        {
+            int dx = rock[i+1].first-rock[i].first;
+            int dy = rock[i+1].second-rock[i].second;
+
+            if (rock[i].second > lowest_platform)
+                lowest_platform = rock[i].second;
+            else if (rock[i+1].second > lowest_platform)
+                lowest_platform = rock[i+1].second;
+
+            for (int k=0; k < max(abs(dx),abs(dy)); k++)
+            {
+                Coord c;
+                c = make_pair(rock[i].first + k*dx/max(abs(dx),abs(dy)), 
+                            rock[i].second + k*dy/max(abs(dx),abs(dy)));
+                platform.insert(c);
+            }
+        }
+        platform.insert(rock[rock.size()-1]);
+    }
+    return {lowest_platform,platform};
+}
+
+void partOne()
+{   
+    ifstream file("day14.txt");
+    Rocks parsed = parse(file);
+    pair<int,set<Coord>> t = transform(parsed);
+    int lwst = t.first;
+    set<Coord>& rock = t.second;
+
+    bool is_overflow = false;
+    bool is_stationary = false;
+    int drop_count{};
+    //for (int i=0; i < 22; i++)
+    while (!is_overflow)
+    {
+        Coord current = {500,0};
+        is_stationary = false;
+        while (!is_stationary)
+        {
+            Coord prev = current;
+            current.second++;
+            if (current.second > lwst)
+            {
+                is_overflow = true;
+                break;
+            } 
+            if (rock.find(current) != rock.end())
+            {
+                Coord left = {current.first-1, current.second};
+                Coord right = {current.first+1, current.second};
+                if (rock.find(left) == rock.end())
+                {
+                    current.first--;
+                    continue;
+                }
+                else if (rock.find(right) == rock.end())
+                {
+                    current.first++;
+                    continue;
+                }
+                else {
+                    is_stationary = true;
+                    rock.insert(prev);
+                    drop_count++;
+                    break;
+                }
+            }
+        }
+    }
+    
+    cout << "Part 1: It took " << drop_count << " iterations to overflow." << endl;
+
+}
+
+
+
+void partTwo()
+{
+    ifstream file("day14.txt");
+    Rocks parsed = parse(file);
+    pair<int,set<Coord>> t = transform(parsed);
+    int lwst = t.first;
+    set<Coord>& rock = t.second;
+    int floor = t.first + 2;
+
+    bool is_blocked = false;
+    bool is_stationary = false;
+    int drop_count{};
+    for (int i=0; i<2; i++)
+    while (!is_blocked)
+    {
+        Coord current = {500,0};
+        is_stationary = false;
+        while (!is_stationary)
+        {
+            Coord prev = current;
+            current.second++;
+            if (rock.find(current) != rock.end())
+            {
+                Coord left = {current.first-1, current.second};
+                Coord right = {current.first+1, current.second};
+                if (rock.find(left) == rock.end())
+                {
+                    current.first--;
+                    continue;
+                }
+                else if (rock.find(right) == rock.end())
+                {
+                    current.first++;
+                    continue;
+                }
+                else {
+                    if (prev == make_pair(500,0))
+                    {
+                        is_blocked = true;
+                        break;
+                    }
+                    
+                    is_stationary = true;
+                    rock.insert(prev);
+                    drop_count++;
+                    break;
+                }
+            }
+            if(current.second == floor)
+            {
+                is_stationary = true;
+                rock.insert(prev);
+                drop_count++;
+                break;
+            }
+        }
+    }
+   
+    cout << "Part 2: It took " << drop_count << " drops to block the start" << endl;
 }
 
 int main()
 {
-    //partOne();
+    partOne();
     partTwo();
 
     return 0;

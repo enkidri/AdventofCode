@@ -1,77 +1,92 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
+#include <vector>
+#include <iterator>
+#include <algorithm>
 using namespace std;
+
+void partOne()
+{
+    string line;
+    ifstream file("day2.txt");
+
+    vector<char> O = {'O', 'A', 'B', 'C'};
+    vector<char> U = {'O', 'X', 'Y', 'Z'};
+
+    int score{};
+    while (getline(file, line))
+    {
+        int opponent_idx = distance(O.begin(), find(O.begin(), O.end(), line[0]));
+        int my_idx = distance(U.begin(), find(U.begin(), U.end(), line[2]));
+        
+        int res = my_idx - 1;
+        if ((res == 0 && opponent_idx == 3) || (res == opponent_idx))       //Winnig score
+        {
+            score += 6;
+        }
+        if (opponent_idx == my_idx)                                         //Drawing score
+        {
+            score += 3;
+        }
+        score += my_idx;
+    }
+
+    cout << "Part 1: Total score is " << score << endl;
+}
 
 void partTwo()
 {
-    ifstream f{"day2_input.txt"};
-    int forward{};
-    int depth{};
-    int aim{};
-    string command{};
-    int dist{};
-    if (f.is_open())
+    string line;
+    ifstream file("day2.txt");
+
+    vector<char> O = {'O', 'A', 'B', 'C'};
+    vector<char> U = {'O', 'X', 'Y', 'Z'};
+
+    int score{};
+    int win_points{6};
+    int draw_points{3};
+    while (getline(file, line))
     {
-        while(f >> command >> dist)
+        int opponent_idx = distance(O.begin(), find(O.begin(), O.end(), line[0]));
+        int my_idx{};
+        
+        if (line[2] == 'X')
         {
-            if (command == "forward")
+            if (opponent_idx != 1)
             {
-                forward += dist;
-                depth += dist*aim;
+                my_idx = opponent_idx - 1;
             }
-            else if(command == "down")
+            else
             {
-                aim += dist;
+                my_idx = 3;
             }
-            else if(command == "up")
+            score += my_idx;
+        }
+        else if (line[2] == 'Y')
+        {
+            my_idx = opponent_idx;
+            score += my_idx + draw_points;
+        }
+        else if (line[2] == 'Z')
+        {
+            if (opponent_idx != 3)
             {
-                aim -= dist;
+                my_idx = opponent_idx + 1;
             }
+            else
+            {
+                my_idx = 1;
+            }
+            score += my_idx + win_points;
         }
     }
-
-    cout << "The position of the submarine is\nHorizontal: " << forward << "\n" <<
-              "Depth: " << depth << endl;
-
-    cout << "The product is: " << depth*forward << endl;
-}
-
-int partOne()
-{
-    ifstream f{"day2_input.txt"};
-    int forward{};
-    int depth{};
-    string command{};
-    int dist{};
-    if (f.is_open())
-    {
-        while(f >> command >> dist)
-        {
-            if (command == "forward")
-            {
-                forward += dist;
-            }
-            else if(command == "down")
-            {
-                depth += dist;
-            }
-            else if(command == "up")
-            {
-                depth -= dist;
-            }
-        }
-    }
-
-    cout << "The position of the submarine is\nHorizontal: " << forward << "\n" <<
-              "Depth: " << depth << endl;
-
-    cout << "The product is: " << depth*forward << endl;
+    cout << "Part 2: Total total amount of points are " << score << endl;
 }
 
 int main()
 {
-    partOne();
+    //partOne();
     partTwo();
     return 0;
 }

@@ -6,5 +6,15 @@
 # Ignore build files
 build/
 
+# Ingore executables
+*.exe
+*.out
+
 # Ignore this idk what it is
 .cache/
+
+# Ignore vim session files
+*.vim
+
+# Ignore hidden files
+.*
