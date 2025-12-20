@@ -1,0 +1,10 @@
+*.txt
+
+# Do NOT ignore CmakeLists.txt files
+!cmakelists.txt
+
+# Ignore build files
+build/
+
+# Ignore this idk what it is
+.cache/
