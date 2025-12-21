@@ -18,3 +18,7 @@ build/
 
 # Ignore hidden files
 .*
+
+# Ignore rust build files
+*.lock
+target/

@@ -7,11 +7,11 @@
 
 using namespace std;
 
-void partTwo(const string& file_path) {
+void partTwo(const string &file_path) {
   auto start = chrono::high_resolution_clock::now();
   ifstream file(file_path);
   string input;
-  int answer;
+  uint64_t answer = 0;
 
   while (getline(file, input)) {
   }
@@ -21,11 +21,11 @@ void partTwo(const string& file_path) {
   cout << "PART2: " << answer << " Time: " << elapsed.count() << " ms" << endl;
 }
 
-void partOne(const string& file_path) {
+void partOne(const string &file_path) {
   auto start = chrono::high_resolution_clock::now();
   ifstream file(file_path);
   string input;
-  int answer;
+  uint64_t answer = 0;
 
   while (getline(file, input)) {
   }
@@ -41,13 +41,13 @@ int main() {
 
   cout << "========TEST OUTPUT========" << endl;
   partOne(test_path);
-  partTwo(test_path);
+  // partTwo(test_path);
 
   cout << endl;
 
   cout << "=========MY OUTPUT=========" << endl;
-  partOne(my_path);
-  partTwo(my_path);
+  // partOne(my_path);
+  // partTwo(my_path);
 
   return 0;
 };
