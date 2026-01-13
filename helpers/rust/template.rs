@@ -1,6 +1,5 @@
 use std::fs;
 use std::io::{self, BufRead};
-use std::ops::Add;
 use std::path::Path;
 use std::time::Instant;
 
@@ -21,19 +20,12 @@ fn main() {
 }
 
 // Used to read text file line by line
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<fs::File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = fs::File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
 
 #[allow(dead_code)]
 fn part_one(file_path: &str) {
     let now = Instant::now();
 
-    let mut answer: u64 = 0;
+    let mut answer: Option<u64> = None;
     // Parse the problem
     if let Ok(lines) = read_lines(file_path) {
         for line in lines.map_while(Result::ok) {}
@@ -47,7 +39,7 @@ fn part_one(file_path: &str) {
 fn part_two(file_path: &str) {
     let now = Instant::now();
 
-    let mut answer: u64 = 0;
+    let mut answer: Option<u64> = None;
     // Parse the problem
     if let Ok(lines) = read_lines(file_path) {
         for line in lines.map_while(Result::ok) {}
