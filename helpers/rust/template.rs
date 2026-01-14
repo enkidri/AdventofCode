@@ -9,8 +9,8 @@ fn main() {
     println!("========= PART ONE ==========");
     print!("Test ");
     part_one(test_path);
-    print!("Input ");
-    part_one(input_path);
+    // print!("Input ");
+    // part_one(input_path);
 
     println!("========= PART TWO ==========");
     // print!("Test ");
@@ -24,27 +24,28 @@ fn main() {
 #[allow(dead_code)]
 fn part_one(file_path: &str) {
     let now = Instant::now();
+    // Parse the problem
 
     let mut answer: Option<u64> = None;
-    // Parse the problem
-    if let Ok(lines) = read_lines(file_path) {
-        for line in lines.map_while(Result::ok) {}
-    }
-
     let elapsed = now.elapsed();
-    println!("Answer: {} Time: {} ms", answer, elapsed.as_millis());
+    println!(
+        "Answer: {} Time: {:.3} ms",
+        answer.unwrap_or(0),
+        elapsed.as_secs_f64() * 1000.0
+    );
 }
 
 #[allow(dead_code)]
 fn part_two(file_path: &str) {
     let now = Instant::now();
 
-    let mut answer: Option<u64> = None;
     // Parse the problem
-    if let Ok(lines) = read_lines(file_path) {
-        for line in lines.map_while(Result::ok) {}
-    }
 
+    let mut answer: Option<u64> = None;
     let elapsed = now.elapsed();
-    println!("Answer: {} Time: {} ms", answer, elapsed.as_millis());
+    println!(
+        "Answer: {} Time: {:.3} ms",
+        answer.unwrap_or(0),
+        elapsed.as_secs_f64() * 1000.0
+    );
 }
