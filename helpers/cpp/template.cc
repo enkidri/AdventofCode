@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -17,8 +18,9 @@ void partTwo(const string &file_path) {
   }
 
   auto end = chrono::high_resolution_clock::now();
-  auto elapsed = chrono::duration_cast<chrono::milliseconds>(end - start);
-  cout << answer << " Time: " << elapsed.count() << " ms" << endl;
+  std::chrono::duration<double, std::milli> elapsed = end - start;
+  cout << answer << " Time: " << fixed << setprecision(3) << elapsed.count()
+       << " ms" << endl;
 }
 
 void partOne(const string &file_path) {
@@ -31,8 +33,9 @@ void partOne(const string &file_path) {
   }
 
   auto end = chrono::high_resolution_clock::now();
-  auto elapsed = chrono::duration_cast<chrono::milliseconds>(end - start);
-  cout << answer << " Time: " << elapsed.count() << " ms" << endl;
+  std::chrono::duration<double, std::milli> elapsed = end - start;
+  cout << answer << " Time: " << fixed << setprecision(3) << elapsed.count()
+       << " ms" << endl;
 }
 
 int main() {
