@@ -1,86 +1,140 @@
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <list>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
 
-class CrabCupSimulator {
+class OptimizedCrabCupSim {
+
 public:
-  CrabCupSimulator(string &s) {
-    labels = std::move(s);
-    current_cup = labels[0];
-    held_cups = labels.substr(1, 3);
+  OptimizedCrabCupSim(const string &s) {
+    CUP_NUMBERS = 9;
+    int max_value = 0;
+    for (const auto &c : s) {
+      labels.push_back(c - '0');
+      max_value = max(labels.back(), max_value);
+      labels_map[c - '0'] = --labels.end();
+    }
+
+    current_cup_iter = labels.begin();
   }
 
-  size_t get_destination_idx() {
-    unordered_map<char, size_t> label_map;
-    char top_label = '0';
-    for (size_t i = 0; i < labels.size(); i++) {
-      if (held_cups.find(labels[i]) == string::npos) {
-        label_map[labels[i]] = i;
-        top_label = max(labels[i], top_label);
+  OptimizedCrabCupSim(const string &s, bool part_two) {
+    CUP_NUMBERS = 1000000;
+    int max_value = 0;
+    for (const auto &c : s) {
+      labels.push_back(c - '0');
+      max_value = max(labels.back(), max_value);
+      labels_map[c - '0'] = --labels.end();
+    }
+    // for the extra condition
+    for (int i = max_value + 1; i <= CUP_NUMBERS; i++) {
+      labels.push_back(i);
+      labels_map[i] = --labels.end();
+    }
+
+    current_cup_iter = labels.begin();
+  }
+
+  vector<int> get_held_cups() {
+    vector<int> held_cups;
+    held_cups.reserve(3);
+
+    auto it = current_cup_iter;
+
+    for (int i = 1; i <= 3; i++) {
+      ++it;
+
+      if (it == labels.end()) {
+        it = labels.begin();
+      }
+
+      held_cups.push_back(*it);
+    }
+
+    return held_cups;
+  }
+
+  void remove_held_cups() {
+    vector<list<int>::iterator> targets;
+    targets.reserve(3);
+    auto it = current_cup_iter;
+
+    for (int i = 0; i < 3; i++) {
+      ++it;
+
+      if (it == labels.end()) {
+        it = labels.begin();
+      }
+
+      targets.push_back(it);
+    }
+
+    for (auto target : targets) {
+      labels.erase(target);
+    }
+  }
+
+  auto get_destination_iter(const vector<int> &invalid_dest_values) {
+    int destination_value = 0;
+    for (int i = 1; i <= 4; i++) {
+      int val = *current_cup_iter - i;
+
+      if (val < 1) {
+        val += CUP_NUMBERS;
+      }
+
+      auto it =
+          find(invalid_dest_values.begin(), invalid_dest_values.end(), val);
+      if (it == invalid_dest_values.end()) {
+        destination_value = val;
+        break;
       }
     }
 
-    // current label doesnt wrap around
-    for (char i = current_cup - 1; i > '0'; i--) {
-      auto it = label_map.find(i);
-      if (it != label_map.end()) {
-        return it->second;
-      }
-    }
-
-    // current label does wrap around
-    return label_map[top_label];
+    return labels_map[destination_value];
   }
 
   void step() {
-    string new_labels;
-    const size_t dest_idx = get_destination_idx();
-    new_labels += labels[dest_idx];
-    new_labels += held_cups;
-    const size_t num_char_add = labels.size() - new_labels.size();
-    for (int i = 0, j = 1; i < num_char_add; j++) {
-      size_t current_idx = (dest_idx + j) % labels.size();
-      if (held_cups.find(labels[current_idx]) == string::npos) {
-        new_labels += labels[current_idx];
-        i++;
-      }
+    vector<int> held_cups = get_held_cups();
+    remove_held_cups();
+    auto dest_iter = get_destination_iter(held_cups);
+
+    ++dest_iter;
+    for (int cup : held_cups) {
+      auto it = labels.insert(dest_iter, cup);
+
+      // update map
+      labels_map[cup] = it;
+
+      ++it;
     }
 
-    // update the current state
-    labels = new_labels;
-    size_t current_idx = labels.find(current_cup);
-    if (current_idx == string::npos) {
-      std::runtime_error("Error. Couldnt find the correct label.");
+    // update internal state
+    current_cup_iter++;
+    if (current_cup_iter == labels.end()) {
+      current_cup_iter = labels.begin();
     }
-    current_cup = labels[(current_idx + 1) % labels.size()];
-    held_cups.clear();
-    for (int i = 0; i < 3; i++) {
-      size_t idx = (current_idx + 2 + i) % labels.size();
-      held_cups += labels[idx];
-    }
-  }
-
-  string get_final_label() {
-    size_t idx = labels.find('1');
-    string f1 = labels.substr(0, idx);
-    string f2 = labels.substr(idx);
-    return (f2 + f1).substr(1);
+    move_count++;
   }
 
   void print() {
     cout << "Move: " << move_count << endl;
-    cout << "Labels: " << labels << endl;
-    cout << "Held cups: " << held_cups << endl;
-    cout << "Current cup: " << current_cup << endl;
-    cout << "Destination: " << labels[get_destination_idx()] << endl;
+    cout << "Labels: ";
+    for (auto c : labels) {
+      cout << c;
+    }
+    cout << endl;
+    cout << "Current cup: " << *current_cup_iter << endl;
     cout << "============" << endl;
   }
 
@@ -91,28 +145,54 @@ public:
 
     for (size_t i = 0; i < num_iter; i++) {
       step();
-      move_count++;
       if (debug) {
         print();
       }
     }
   }
 
+  string get_final_label() {
+    string s;
+    auto start_it = find(labels.begin(), labels.end(), 1);
+    for (auto it = ++start_it; it != labels.end(); it++) {
+      s += to_string(*it);
+    }
+    auto end_it = --start_it;
+    for (auto it = labels.begin(); it != end_it; it++) {
+      s += to_string(*it);
+    }
+    return s;
+  }
+
+  uint64_t get_final_product() {
+    auto it = labels_map[1];
+    uint64_t val1 = *std::next(it, 1);
+    uint64_t val2 = *std::next(it, 2);
+    return val1 * val2;
+  }
+
 private:
-  string labels;
-  string held_cups;
-  char current_cup;
+  list<int> labels;
+  list<int>::iterator current_cup_iter;
+  unordered_map<int, list<int>::iterator> labels_map;
   int move_count = 1;
+  int CUP_NUMBERS;
 };
 
 void partTwo(const string &file_path) {
   auto start = chrono::high_resolution_clock::now();
   ifstream file(file_path);
   string input;
-  uint64_t answer = 0;
+  uint64_t answer;
 
-  while (getline(file, input)) {
+  if (!getline(file, input)) {
+    std::runtime_error("Error. File couldnt be read.");
   }
+
+  // perform the algorithm
+  OptimizedCrabCupSim handler(input, true);
+  handler.simulate(10000000, false);
+  answer = handler.get_final_product();
 
   auto end = chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -131,7 +211,7 @@ void partOne(const string &file_path) {
   }
 
   // perform the algorithm
-  CrabCupSimulator handler(input);
+  OptimizedCrabCupSim handler(input);
   handler.simulate(100, false);
   answer = handler.get_final_label();
 
@@ -151,13 +231,13 @@ int main() {
   cout << "Input: ";
   partOne(my_path);
 
-  // cout << endl;
+  cout << endl;
 
-  // cout << "=========PART 2=========" << endl;
-  // cout << "Test: ";
-  // partTwo(test_path);
-  // cout << "Input: ";
-  // partTwo(my_path);
+  cout << "=========PART 2=========" << endl;
+  cout << "Test: ";
+  partTwo(test_path);
+  cout << "Input: ";
+  partTwo(my_path);
 
   return 0;
 };
